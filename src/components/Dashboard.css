@@ -651,3 +651,154 @@
   color: #9ca3af;
   font-size: 13px;
 }
+
+/* ─── Tab: Buscar ────────────────────────────────────────────────────────── */
+
+.buscar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+}
+
+.buscar__input-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.buscar__input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.buscar__input:focus {
+  border-color: #1a73e8;
+}
+
+.buscar__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.buscar__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.producto-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  gap: 4px;
+}
+
+.producto-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.producto-card__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.producto-card__precio {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.producto-card__tienda {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.producto-card__link {
+  font-size: 11px;
+  color: #1a73e8;
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.producto-card__link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Settings Dropdown ──────────────────────────────────────────────────── */
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 200px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.settings-dropdown__user {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-dropdown__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.settings-dropdown__email {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.settings-dropdown__divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0;
+}
+
+.settings-dropdown__logout {
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.settings-dropdown__logout:hover {
+  background: #fef2f2;
+}
