@@ -32,20 +32,17 @@ function Login({ onLogin }) {
     setError('')
     setIsLoading(true)
 
-    // Petición real a Supabase para iniciar sesión
     const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      email,
+      password,
     })
 
-    if (supabaseError) {
-      // Si las credenciales fallan, mostramos error y detenemos la carga
-      setError('Correo o contraseña incorrectos.') 
-      setIsLoading(false)
+    setIsLoading(false)
+
+    if (supabaseError || !data.user) {
+      setError('Correo o contraseña incorrectos.')
     } else {
-      // Login exitoso, el token ya se guardó y cambiamos de pantalla
-      setIsLoading(false)
-      onLogin()
+      onLogin(data.user)
     }
   }
 

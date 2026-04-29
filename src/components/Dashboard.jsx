@@ -1,11 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import logo from '../assets/KueskiPay-Logo.png'
-import { userData } from '../data/mockData' // Dejaremos userData por ahora hasta conectar el saldo
 import { supabase } from '../supabaseClient'
 import './Dashboard.css'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
-// (Mantén tus iconos actuales aquí: IconBell, IconSettings, IconHome, IconCalc, IconSearch, IconMoney, IconCalendar, IconStore)
 const IconBell = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
 const IconSettings = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
 const IconHome = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
@@ -15,25 +13,56 @@ const IconMoney = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="no
 const IconCalendar = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
 const IconStore = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4" /><circle cx="9" cy="19" r="1" /><circle cx="20" cy="19" r="1" /></svg>
 
-// ─── Componentes Auxiliares ──────────────────────────────────────────────────
-// (Mantén DonutChart y CreditCard igual que antes)
+// ─── Helper ──────────────────────────────────────────────────────────────────
+function formatVencimiento(fechaStr) {
+  if (!fechaStr) return ''
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const fecha = new Date(fechaStr + 'T00:00:00')
+  const diff = Math.round((fecha - hoy) / (1000 * 60 * 60 * 24))
+  if (diff < 0) return 'Pago vencido'
+  if (diff === 0) return 'Vence hoy'
+  return `Vence en ${diff} día${diff !== 1 ? 's' : ''}`
+}
+
+// ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ disponible, total, isCompatible }) {
-  const RADIUS = 38; const STROKE = 11; const SIZE = 110; const C = SIZE / 2; const CIRCUMFERENCE = 2 * Math.PI * RADIUS; const dash = isCompatible ? (disponible / total) * CIRCUMFERENCE : 0;
+  const RADIUS = 38
+  const STROKE = 11
+  const SIZE = 110
+  const C = SIZE / 2
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+  const pct = isCompatible && total > 0 ? disponible / total : 0
+  const offset = CIRCUMFERENCE * (1 - pct)
+
   return (
     <div className="donut">
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
         <circle cx={C} cy={C} r={RADIUS} fill="none" stroke="#e5e7eb" strokeWidth={STROKE} />
-        <circle cx={C} cy={C} r={RADIUS} fill="none" stroke={isCompatible ? '#00C46A' : '#9ca3af'} strokeWidth={STROKE} strokeDasharray={`${dash} ${CIRCUMFERENCE}`} strokeLinecap="round" transform={`rotate(-90 ${C} ${C})`} />
+        <circle
+          cx={C} cy={C} r={RADIUS}
+          fill="none"
+          stroke={isCompatible ? '#00C46A' : '#9ca3af'}
+          strokeWidth={STROKE}
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${C} ${C})`}
+          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+        />
       </svg>
       <div className="donut__inner">
-        <span className="donut__amount" style={{ color: isCompatible ? '#1a1a2e' : '#9ca3af' }}>${disponible.toLocaleString('es-MX')}</span>
+        <span className="donut__amount" style={{ color: isCompatible ? '#1a1a2e' : '#9ca3af' }}>
+          ${disponible.toLocaleString('es-MX')}
+        </span>
         <span className="donut__label">MXN DISPONIBLE</span>
       </div>
     </div>
   )
 }
 
-function CreditCard({ isCompatible }) {
+// ─── Credit Card ─────────────────────────────────────────────────────────────
+function CreditCard({ usuario, isCompatible }) {
   return (
     <div className={`credit-card ${!isCompatible ? 'credit-card--disabled' : ''}`}>
       <div className="credit-card__top">
@@ -42,31 +71,34 @@ function CreditCard({ isCompatible }) {
           <path d="M8 2a9 9 0 0 1 0 20" /><path d="M12 6a5 5 0 0 1 0 12" /><circle cx="16" cy="12" r="1.5" fill="rgba(255,255,255,0.8)" stroke="none" />
         </svg>
       </div>
-      <div className="credit-card__name">{userData.nombre}</div>
-      <div className="credit-card__number">{userData.tarjeta}</div>
+      <div className="credit-card__name">{usuario?.nombre ?? '—'}</div>
+      <div className="credit-card__number">{usuario?.numero_tarjeta ?? '**** **** **** ****'}</div>
       <div className="credit-card__bottom"><span className="credit-card__type">CRÉDITO KUESKIPAY</span></div>
     </div>
   )
 }
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
+// ─── Tab: Inicio ─────────────────────────────────────────────────────────────
+function TabInicio({ isCompatible, usuario }) {
+  const disponible = usuario?.credito_disponible ?? 0
+  const adeudo = usuario?.adeudo_proximo ?? 0
+  const lineaTotal = disponible + adeudo
+  const textoVencimiento = formatVencimiento(usuario?.fecha_vencimiento)
 
-function TabInicio({ isCompatible }) {
-  // (Mantén el contenido exacto de tu TabInicio actual)
   return (
     <div className="inicio">
       <div className={`badge ${isCompatible ? 'badge--green' : 'badge--red'}`}>
         <span className="badge__icon">{isCompatible ? '✓' : '✗'}</span>
         {isCompatible ? 'Este comercio es compatible con Kueski' : 'Este comercio no es compatible con Kueski'}
       </div>
-      <CreditCard isCompatible={isCompatible} />
+      <CreditCard usuario={usuario} isCompatible={isCompatible} />
       <div className="inicio__credit-row">
-        <DonutChart disponible={userData.creditoDisponible} total={userData.lineaTotal} isCompatible={isCompatible} />
+        <DonutChart disponible={disponible} total={lineaTotal} isCompatible={isCompatible} />
         <div className="inicio__linea">
           <span className="inicio__linea-label">Línea Total</span>
-          <span className="inicio__linea-amount">${userData.lineaTotal.toLocaleString('es-MX')} MXN</span>
+          <span className="inicio__linea-amount">${lineaTotal.toLocaleString('es-MX')} MXN</span>
           <span className="inicio__linea-used" style={{ color: isCompatible ? '#6b7280' : '#9ca3af' }}>
-            ${(userData.lineaTotal - userData.creditoDisponible).toLocaleString('es-MX')} MXN usado
+            ${adeudo.toLocaleString('es-MX')} MXN usado
           </span>
         </div>
       </div>
@@ -81,14 +113,16 @@ function TabInicio({ isCompatible }) {
               <button key={label} className="action-btn"><Icon /><span>{label}</span></button>
             ))}
           </div>
-          <div className="inicio__alert">
-            <div className="inicio__alert-accent" />
-            <div className="inicio__alert-body">
-              <span className="inicio__alert-title">Próximo pago</span>
-              <div className="inicio__alert-amount">${userData.adeudoProximo.toLocaleString('es-MX')} MXN</div>
-              <div className="inicio__alert-due">⚠️ {userData.fechaVencimiento}</div>
+          {adeudo > 0 && (
+            <div className="inicio__alert">
+              <div className="inicio__alert-accent" />
+              <div className="inicio__alert-body">
+                <span className="inicio__alert-title">Próximo pago</span>
+                <div className="inicio__alert-amount">${adeudo.toLocaleString('es-MX')} MXN</div>
+                <div className="inicio__alert-due">⚠️ {textoVencimiento}</div>
+              </div>
             </div>
-          </div>
+          )}
         </>
       ) : (
         <div className="inicio__incompatible">
@@ -104,12 +138,19 @@ function TabInicio({ isCompatible }) {
   )
 }
 
-function TabCalculadora() {
-  // (Mantén el contenido exacto de tu TabCalculadora actual)
-  const RATE = 0.03; const QUINCENAS_OPTS = [2, 4, 6, 8]; const SCORE_REQUERIDO_8 = 750;
-  const RECOMENDACIONES = { 2: 'Pagas menos intereses pero cuotas más altas.', 4: '✅ Mejor opción — equilibrio ideal.', 6: 'Cuotas cómodas pero pagas más intereses.', }
+// ─── Tab: Calculadora ─────────────────────────────────────────────────────────
+function TabCalculadora({ usuario }) {
+  const RATE = 0.03
+  const QUINCENAS_OPTS = [2, 4, 6, 8]
+  const SCORE_REQUERIDO_8 = 750
+  const RECOMENDACIONES = {
+    2: 'Pagas menos intereses pero cuotas más altas.',
+    4: '✅ Mejor opción — equilibrio ideal.',
+    6: 'Cuotas cómodas pero pagas más intereses.',
+  }
   const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  
+  const score = usuario?.score_crediticio ?? 0
+
   const [monto, setMonto] = useState(1500)
   const [rawInput, setRawInput] = useState('1500')
   const [quincenas, setQuincenas] = useState(4)
@@ -139,14 +180,21 @@ function TabCalculadora() {
         <div className="calc__selector">
           <div className="calc__dots-row">
             {QUINCENAS_OPTS.map((q) => {
-              const locked = q === 8 && userData.scoreCrediticio < SCORE_REQUERIDO_8
+              const locked = q === 8 && score < SCORE_REQUERIDO_8
               const active = quincenas === q
               return (
                 <div key={q} className="calc__dot-col">
-                  <button className={`calc__dot ${active ? 'calc__dot--active' : ''} ${locked ? 'calc__dot--locked' : ''}`} onClick={() => !locked && setQuincenas(q)} disabled={locked} title={locked ? 'Mejora tu score para desbloquear' : undefined}>
+                  <button
+                    className={`calc__dot ${active ? 'calc__dot--active' : ''} ${locked ? 'calc__dot--locked' : ''}`}
+                    onClick={() => !locked && setQuincenas(q)}
+                    disabled={locked}
+                    title={locked ? 'Mejora tu score para desbloquear' : undefined}
+                  >
                     {locked ? '🔒' : null}
                   </button>
-                  <span className={`calc__q-label ${active ? 'calc__q-label--active' : ''} ${locked ? 'calc__q-label--locked' : ''}`}>{q}<br />QUINCENAS</span>
+                  <span className={`calc__q-label ${active ? 'calc__q-label--active' : ''} ${locked ? 'calc__q-label--locked' : ''}`}>
+                    {q}<br />QUINCENAS
+                  </span>
                   {locked && <span className="calc__tooltip">Mejora tu score para desbloquear</span>}
                 </div>
               )
@@ -156,15 +204,19 @@ function TabCalculadora() {
         </div>
         {quincenas !== 8 && monto > 0 && <div className="calc__rec">{RECOMENDACIONES[quincenas]}</div>}
         <div className="calc__desglose">
-          <div className="calc__row"><span>Monto original</span><span>${fmt(monto)}</span></div><hr className="calc__divider" />
-          <div className="calc__row"><span>Intereses ({(RATE * 100).toFixed(0)}% / quincena)</span><span>${fmt(intereses)}</span></div><hr className="calc__divider" />
-          <div className="calc__row calc__row--bold"><span>Total a pagar</span><span>${fmt(total)}</span></div><hr className="calc__divider" />
+          <div className="calc__row"><span>Monto original</span><span>${fmt(monto)}</span></div>
+          <hr className="calc__divider" />
+          <div className="calc__row"><span>Intereses ({(RATE * 100).toFixed(0)}% / quincena)</span><span>${fmt(intereses)}</span></div>
+          <hr className="calc__divider" />
+          <div className="calc__row calc__row--bold"><span>Total a pagar</span><span>${fmt(total)}</span></div>
+          <hr className="calc__divider" />
           <div className="calc__row calc__row--accent"><span>Cuota quincenal</span><span>${fmt(cuota)}</span></div>
         </div>
       </div>
       <div className="calc__footer">
         <div className="calc__footer-info">
-          <span className="calc__footer-label">Costo total</span><strong className="calc__footer-amount">${fmt(total)} MXN</strong>
+          <span className="calc__footer-label">Costo total</span>
+          <strong className="calc__footer-amount">${fmt(total)} MXN</strong>
         </div>
         <button className="calc__cta">Continuar</button>
       </div>
@@ -172,34 +224,28 @@ function TabCalculadora() {
   )
 }
 
-// ─── NUEVO: Tab Buscar ────────────────────────────────────────────────────────
+// ─── Tab: Buscar ─────────────────────────────────────────────────────────────
 function TabBuscar({ productos, tiendas }) {
   const [busqueda, setBusqueda] = useState('')
-
-  // Filtramos los productos según lo que escriba el usuario
-  const productosFiltrados = productos.filter(p => 
+  const productosFiltrados = productos.filter(p =>
     p.nombre.toLowerCase().includes(busqueda.toLowerCase())
   )
-
   return (
     <div className="buscar">
       <div className="buscar__input-wrapper">
         <span className="buscar__icon"><IconSearch /></span>
-        <input 
-          type="text" 
-          className="buscar__input" 
-          placeholder="Busca productos o tiendas..." 
+        <input
+          type="text"
+          className="buscar__input"
+          placeholder="Busca productos o tiendas..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
       </div>
-
       <div className="buscar__lista">
         {productosFiltrados.length > 0 ? (
           productosFiltrados.map((producto) => {
-            // Buscamos a qué tienda pertenece este producto para mostrar su nombre
             const tienda = tiendas.find(t => t.id_tienda === producto.id_tienda)
-            
             return (
               <div key={producto.id_producto} className="producto-card">
                 <div className="producto-card__header">
@@ -225,61 +271,95 @@ function TabBuscar({ productos, tiendas }) {
   )
 }
 
-// ─── Dashboard Principal ──────────────────────────────────────────────────────
+// ─── Settings Dropdown ────────────────────────────────────────────────────────
+function SettingsDropdown({ usuario, onLogout, onClose }) {
+  const ref = useRef()
 
-function Dashboard({ onLogout }) {
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    onLogout()
+  }
+
+  return (
+    <div className="settings-dropdown" ref={ref}>
+      <div className="settings-dropdown__user">
+        <span className="settings-dropdown__name">👤 {usuario?.nombre}</span>
+        <span className="settings-dropdown__email">📧 {usuario?.correo}</span>
+      </div>
+      <hr className="settings-dropdown__divider" />
+      <button className="settings-dropdown__logout" onClick={handleLogout}>
+        🚪 Cerrar sesión
+      </button>
+    </div>
+  )
+}
+
+// ─── Dashboard Principal ──────────────────────────────────────────────────────
+const NAV_TABS = [
+  { id: 'inicio', Icon: IconHome, label: 'INICIO' },
+  { id: 'calculadora', Icon: IconCalc, label: 'CALCULADORA' },
+  { id: 'buscar', Icon: IconSearch, label: 'BUSCAR' },
+]
+
+function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
-  
-  // Estados para nuestros datos de Supabase
+  const [showSettings, setShowSettings] = useState(false)
   const [tiendas, setTiendas] = useState([])
   const [productos, setProductos] = useState([])
 
-  // useEffect para descargar los datos al abrir el Dashboard
   useEffect(() => {
     const descargarDatos = async () => {
-      // 1. Traemos las tiendas
       const { data: tiendasData } = await supabase.from('tiendas_afiliadas').select('*')
       if (tiendasData) setTiendas(tiendasData)
-
-      // 2. Traemos los productos
       const { data: productosData } = await supabase.from('productos').select('*')
       if (productosData) setProductos(productosData)
     }
-
     descargarDatos()
   }, [])
 
-  // Comparamos la URL actual contra las tiendas REALES de la base de datos
   const isCompatible = useMemo(() => {
-    if (tiendas.length === 0) return true // Asume true mientras carga
+    if (tiendas.length === 0) return true
     try {
       const { hostname } = window.location
       if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') return true
       return tiendas.some((t) => hostname.includes(t.url.split('.')[0]))
-    } catch {
-      return true
-    }
+    } catch { return true }
   }, [tiendas])
-
-  const NAV_TABS = [
-    { id: 'inicio', Icon: IconHome, label: 'INICIO' },
-    { id: 'calculadora', Icon: IconCalc, label: 'CALCULADORA' },
-    { id: 'buscar', Icon: IconSearch, label: 'BUSCAR' },
-  ]
 
   return (
     <div className="dashboard">
       <header className="dashboard__header">
         <img src={logo} alt="KueskiPay" className="dashboard__logo" />
-        <div className="dashboard__header-icons">
+        <div className="dashboard__header-icons" style={{ position: 'relative' }}>
           <button className="icon-btn" aria-label="Notificaciones"><IconBell /></button>
-          <button className="icon-btn" aria-label="Cerrar sesión" onClick={onLogout}><IconSettings /></button>
+          <button
+            className="icon-btn"
+            aria-label="Configuración"
+            onClick={() => setShowSettings((v) => !v)}
+          >
+            <IconSettings />
+          </button>
+          {showSettings && (
+            <SettingsDropdown
+              usuario={usuario}
+              onLogout={onLogout}
+              onClose={() => setShowSettings(false)}
+            />
+          )}
         </div>
       </header>
 
       <main className="dashboard__content">
-        {tab === 'inicio' && <TabInicio isCompatible={isCompatible} />}
-        {tab === 'calculadora' && <TabCalculadora />}
+        {tab === 'inicio' && <TabInicio isCompatible={isCompatible} usuario={usuario} />}
+        {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar' && <TabBuscar productos={productos} tiendas={tiendas} />}
       </main>
 
