@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "KueskiPay Widget",
+  "version": "1.0.0",
+  "description": "Widget de crédito KueskiPay para compras en línea",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "KueskiPay"
+  },
+  "permissions": []
+}

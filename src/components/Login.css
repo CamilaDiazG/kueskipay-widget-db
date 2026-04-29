@@ -1,0 +1,139 @@
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 28px 28px;
+  height: 100%;
+  background: #ffffff;
+}
+
+.login__logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.3px;
+  margin-bottom: 24px;
+}
+
+.login__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.login__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login__input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #1a1a2e;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.login__input::placeholder {
+  color: #9ca3af;
+}
+
+.login__input:focus {
+  border-color: #1a73e8;
+}
+
+.login__password-wrapper {
+  position: relative;
+}
+
+.login__password-wrapper .login__input {
+  padding-right: 46px;
+}
+
+.login__eye {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.login__eye:hover {
+  color: #6b7280;
+}
+
+.login__forgot {
+  color: #1a73e8;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  align-self: flex-start;
+  margin-top: -4px;
+}
+
+.login__forgot:hover {
+  text-decoration: underline;
+}
+
+.login__error {
+  color: #ef4444;
+  font-size: 13px;
+  text-align: center;
+  margin-top: -4px;
+}
+
+.login__btn {
+  width: 100%;
+  padding: 15px;
+  background: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.login__btn:hover {
+  background: #1558b0;
+}
+
+.login__btn:active {
+  background: #104a96;
+}
+
+.login__register {
+  margin-top: auto;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.login__register a {
+  color: #1a73e8;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.login__register a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,10 @@
+:root {
+  --color-primary: #00c46a;
+  --color-background: #ffffff;
+  --color-text: #1a1a2e;
+}
+
+.widget {
+  width: 100%;
+  height: 100%;
+}
